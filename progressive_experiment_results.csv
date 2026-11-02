@@ -1,0 +1,5 @@
+Experiment,Threshold,Micro_F1,Macro_F1,Micro_Precision,Macro_Precision,Micro_Recall,Macro_Recall,CAFA_Fmax
+1. Baseline CNN (Global Tau),0.12,0.2946,0.0497,0.2143,0.0312,0.4712,0.1318,0.2946
+2. Baseline CNN (Per-Class Taus),Per-Class Calibrated,0.2967,0.0539,0.2273,0.0369,0.4272,0.1212,0.2946
+3. Baseline CNN + ASL Loss + Per-Class Taus,Per-Class Calibrated,0.1324,0.1133,0.0754,0.0762,0.5414,0.4731,0.3054
+4. DeepProteinHybrid (Full Suite + Per-Class Taus),Per-Class Calibrated,0.1467,0.1569,0.0821,0.1062,0.6901,0.6601,0.3412

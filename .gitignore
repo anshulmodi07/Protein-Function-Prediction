@@ -1,0 +1,20 @@
+# Python artifacts
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Jupyter checkpoints
+.ipynb_checkpoints/
+
+# Environment files
+.env
+venv/
+env/
+
+# System files
+Thumbs.db
+.DS_Store
+
+# Large raw datasets (79.5 MB - exclude to keep repository fast and under 50MB warning)
+uniprot_proteins.csv
+

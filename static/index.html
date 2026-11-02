@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DeepProtein Studio | SOTA Protein Function Prediction</title>
+  <meta name="description" content="Predict protein Gene Ontology (GO) functional annotations directly from primary amino acid sequences using the custom DeepProteinHybrid neural architecture.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <!-- Ambient background lighting -->
+  <div class="ambient-glow glow-top-left"></div>
+  <div class="ambient-glow glow-bottom-right"></div>
+
+  <!-- Header -->
+  <header class="app-header">
+    <div class="header-container">
+      <div class="brand">
+        <div class="brand-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+          </svg>
+        </div>
+        <div class="brand-text">
+          <h1>DeepProtein <span>Studio</span></h1>
+          <p class="tagline">Computational Biology &bull; Neural Protein Annotation</p>
+        </div>
+      </div>
+      <div class="header-badges">
+        <div class="badge badge-model">
+          <span class="indicator-dot dot-emerald"></span>
+          <span>Model: <strong>DeepProteinHybrid</strong></span>
+        </div>
+        <div class="badge badge-metrics">
+          <span>CAFA F<sub>max</sub>: <strong>0.721</strong> &bull; Micro F1: <strong>0.718</strong></span>
+        </div>
+        <a href="#docs" class="doc-link" id="viewDocsBtn">Technical Report &nearr;</a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="main-content">
+    <!-- Hero / Sequence Input Section -->
+    <section class="console-section">
+      <div class="glass-card console-card">
+        <div class="card-header">
+          <div class="header-title">
+            <span class="step-num">1</span>
+            <h2>Primary Sequence Input</h2>
+          </div>
+          <div class="sequence-counter-badge" id="sequenceCounter">0 / 1000 Residues</div>
+        </div>
+
+        <!-- Sample Presets -->
+        <div class="presets-row">
+          <span class="preset-label">Quick Benchmark Presets:</span>
+          <div class="preset-pills" id="presetButtons">
+            <!-- Dynamically populated or static fallback -->
+            <button class="preset-pill" data-id="INSULIN" id="presetInsulin">⚡ Human Insulin</button>
+            <button class="preset-pill" data-id="HBB" id="presetHbb">⚡ Hemoglobin Beta</button>
+            <button class="preset-pill" data-id="P53" id="presetP53">⚡ p53 Suppressor</button>
+            <button class="preset-pill" data-id="CYP3A4" id="presetCyp">⚡ Cytochrome P450</button>
+            <button class="preset-pill" data-id="RHODOPSIN" id="presetRhodopsin">⚡ Rhodopsin</button>
+          </div>
+        </div>
+
+        <!-- Textarea Console -->
+        <div class="input-wrapper">
+          <textarea 
+            id="sequenceInput" 
+            class="sequence-textarea" 
+            placeholder="Paste raw amino acid sequence (e.g. MALWMRLLPLLALLALWGPD...) or standard FASTA format (>Protein_ID&#10;SEQUENCE...)"
+            spellcheck="false"
+            rows="5"
+          ></textarea>
+          <div class="validation-warning" id="validationWarning" style="display: none;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+            <span id="validationWarningText">Invalid characters detected.</span>
+          </div>
+        </div>
+
+        <!-- Inference Configuration Controls -->
+        <div class="controls-row">
+          <div class="mode-selector">
+            <label class="control-label">Decision Boundary Mode:</label>
+            <div class="segmented-control">
+              <button class="segment-btn active" id="modeCalibratedBtn" data-mode="calibrated">
+                <span class="star-icon">&starf;</span> Per-Class Calibrated (&tau;<sub>c</sub><sup>*</sup>)
+              </button>
+              <button class="segment-btn" id="modeCustomBtn" data-mode="custom">
+                Custom Cutoff Slider
+              </button>
+            </div>
+          </div>
+
+          <div class="threshold-slider-group" id="customThresholdGroup" style="display: none;">
+            <label class="control-label">Cutoff: <strong id="sliderValue">0.50</strong></label>
+            <input type="range" id="thresholdSlider" min="0.05" max="0.95" step="0.05" value="0.50" class="slider-input">
+          </div>
+
+          <div class="action-buttons">
+            <button class="btn btn-secondary" id="clearInputBtn">Clear</button>
+            <button class="btn btn-primary" id="analyzeBtn">
+              <span class="btn-text">Predict Protein Functions</span>
+              <span class="btn-icon">&rarr;</span>
+              <div class="btn-spinner" id="analyzeSpinner" style="display: none;"></div>
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Results Section (Hidden until prediction) -->
+    <section class="results-section" id="resultsSection" style="display: none;">
+      
+      <!-- Biophysical Overview Strip -->
+      <div class="biophysics-grid" id="biophysicsGrid">
+        <div class="stat-card">
+          <div class="stat-icon icon-cyan">📏</div>
+          <div class="stat-info">
+            <span class="stat-label">Sequence Length</span>
+            <span class="stat-value" id="statLength">0 AA</span>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon icon-purple">⚖️</div>
+          <div class="stat-info">
+            <span class="stat-label">Molecular Weight</span>
+            <span class="stat-value" id="statMW">0.0 kDa</span>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon icon-amber">⚡</div>
+          <div class="stat-info">
+            <span class="stat-label">Isoelectric Point (pI)</span>
+            <span class="stat-value" id="statPI">0.0</span>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon icon-emerald">💧</div>
+          <div class="stat-info">
+            <span class="stat-label">Hydropathy (GRAVY)</span>
+            <span class="stat-value" id="statGRAVY">0.0</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Attention Heatmap -->
+      <div class="glass-card attention-card" id="attentionCard">
+        <div class="card-header">
+          <div class="header-title">
+            <span class="step-num">2</span>
+            <h2>Residue-Level Attention Heatmap</h2>
+          </div>
+          <div class="heatmap-legend">
+            <span class="legend-text">Low Attention</span>
+            <div class="legend-bar"></div>
+            <span class="legend-text">High Focus / Catalytic Motif</span>
+          </div>
+        </div>
+        <p class="section-desc">
+          Interactive residue attention extracted from <code>DeepProteinHybrid</code>'s Masked Attention Pooling. Hover on any amino acid to inspect its position, biophysical profile, and relative focus.
+        </p>
+        <div class="heatmap-sequence-container" id="heatmapContainer">
+          <!-- Rendered dynamically -->
+        </div>
+      </div>
+
+      <!-- Functional Annotation Predictions -->
+      <div class="glass-card predictions-card">
+        <div class="card-header predictions-header">
+          <div class="header-title">
+            <span class="step-num">3</span>
+            <h2>Gene Ontology Functional Annotations</h2>
+          </div>
+          <div class="export-actions">
+            <button class="btn btn-outline" id="exportCsvBtn">📥 Export CSV</button>
+            <button class="btn btn-outline" id="copyJsonBtn">📋 Copy JSON</button>
+          </div>
+        </div>
+
+        <!-- Filter and Search Bar -->
+        <div class="filters-bar">
+          <div class="domain-tabs" id="domainTabs">
+            <button class="tab-btn active" data-tab="all" id="tabAll">
+              All Terms <span class="tab-count" id="countAll">0</span>
+            </button>
+            <button class="tab-btn" data-tab="MF" id="tabMF">
+              🧬 Molecular Function <span class="tab-count" id="countMF">0</span>
+            </button>
+            <button class="tab-btn" data-tab="BP" id="tabBP">
+              ⚙️ Biological Process <span class="tab-count" id="countBP">0</span>
+            </button>
+            <button class="tab-btn" data-tab="CC" id="tabCC">
+              🏛️ Cellular Component <span class="tab-count" id="countCC">0</span>
+            </button>
+          </div>
+          <div class="search-box">
+            <input type="text" id="filterInput" placeholder="Filter by term or GO ID..." class="search-input">
+          </div>
+        </div>
+
+        <!-- Active Only Toggle -->
+        <div class="sub-filter-row">
+          <label class="toggle-checkbox">
+            <input type="checkbox" id="showActiveOnlyCheckbox">
+            <span class="checkbox-custom"></span>
+            <span class="toggle-text">Show active predictions above threshold only</span>
+          </label>
+          <span class="summary-active-count" id="summaryActiveCount">Showing 40 terms</span>
+        </div>
+
+        <!-- Predictions List Container -->
+        <div class="predictions-list" id="predictionsList">
+          <!-- Dynamically populated cards -->
+        </div>
+      </div>
+    </section>
+
+    <!-- Technical Architecture / Documentation Modal / Slide-In -->
+    <section class="docs-section glass-card" id="docs">
+      <div class="docs-header">
+        <h2>DeepProteinHybrid: Custom Architecture Summary</h2>
+        <span class="badge badge-success">100% Custom PyTorch Model</span>
+      </div>
+      <div class="docs-body">
+        <p>
+          Unlike generic models, <strong>DeepProteinHybrid</strong> is trained completely from scratch without external pre-trained representations. It resolves the 5 major failure modes of previous protein function predictors:
+        </p>
+        <div class="features-grid">
+          <div class="feature-box">
+            <h4>1. Inductive Biophysical Priors</h4>
+            <p>Every residue is embedded alongside 6 physical constants: Kyte-Doolittle hydropathy, net charge at physiological pH 7.4, isoelectric point (pI), molecular weight, aromaticity, and polarity.</p>
+          </div>
+          <div class="feature-box">
+            <h4>2. Channel-Wise LayerNorm</h4>
+            <p>Replaces standard <code>BatchNorm1d</code>. Normalizes across channels at each sequence coordinate independently, making representations 100% immune to padding token contamination.</p>
+          </div>
+          <div class="feature-box">
+            <h4>3. Multi-Scale Convolutions + SE</h4>
+            <p>Parallel branches with kernel sizes 3, 5, 9, 15 capture micro-motifs, while Squeeze-and-Excitation (SE) channel attention dynamically recalibrates filter importance.</p>
+          </div>
+          <div class="feature-box">
+            <h4>4. Bidirectional GRU Tertiary Context</h4>
+            <p>Propagates long-range sequential dependencies across all 1,000 sequence positions, enabling the model to capture 3D active site formation between distant linear residues.</p>
+          </div>
+          <div class="feature-box">
+            <h4>5. Asymmetric Loss (ASL)</h4>
+            <p>Dynamically discounts easy background negatives without inflating positive gradients, preserving well-calibrated output probabilities.</p>
+          </div>
+          <div class="feature-box">
+            <h4>6. Per-Class Calibration (&tau;<sub>c</sub><sup>*</sup>)</h4>
+            <p>40 independent validation-calibrated decision thresholds prevent rare enzyme functions from being starved by high-frequency terms.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="app-footer">
+    <p>&copy; 2026 DeepProtein Studio &bull; Built with PyTorch &amp; Vanilla Web Technologies &bull; Clean Leak-Free Architecture</p>
+  </footer>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
