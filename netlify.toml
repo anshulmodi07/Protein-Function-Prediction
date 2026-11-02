@@ -1,0 +1,9 @@
+[build]
+  publish = "static"
+
+# If you deploy the Python FastAPI backend to Render, Railway, or Hugging Face,
+# uncomment and set your backend URL below to proxy API calls:
+# [[redirects]]
+#   from = "/api/*"
+#   to = "https://your-fastapi-backend.onrender.com/api/:splat"
+#   status = 200
