@@ -109,28 +109,68 @@ document.addEventListener("DOMContentLoaded", () => {
   // ==========================================
   // 2. PRESET SAMPLES LOADER
   // ==========================================
+  const FALLBACK_PRESETS = [
+    {
+      id: "INSULIN",
+      name: "Human Insulin (P01308)",
+      desc: "Key hormone regulating carbohydrate and lipid metabolism. Binds insulin receptor.",
+      sequence: "MALWMRLLPLLALLALWGPDPAAAFVNQHLCGSHLVEALYLVCGERGFFYTPKTRREAEDLQVGQVELGGGPGAGSLQPLALEGSLQKRGIVEQCCTSICSLYQLENYCN"
+    },
+    {
+      id: "HBB",
+      name: "Hemoglobin Subunit Beta (P68871)",
+      desc: "Iron-containing oxygen transport metalloprotein in erythrocytes. Contains heme cofactor binding pockets.",
+      sequence: "MVHLTPEEKSAVTALWGKVNVDEVGGEALGRLLVVYPWTQRFFESFGDLSTPDAVMGNPKVKAHGKKVLGAFSDGLAHLDNLKGTFATLSELHCDKLHVDPENFRLLGNVLVCVLAHHFGKEFTPPVQAAYQKVVAGVANALAHKYH"
+    },
+    {
+      id: "P53",
+      name: "Cellular Tumor Antigen p53 (P04637)",
+      desc: "Master sequence-specific DNA-binding transcription factor and tumor suppressor regulating cell cycle arrest and apoptosis.",
+      sequence: "MEEPQSDPSVEPPLSQETFSDLWKLLPENNVLSPLPSQAMDDLMLSPDDIEQWFTEDPGPDEAPRMPEAAPPVAPAPAAPTPAAPAPAPSWPLSSSVPSQKTYQGSYGFRLGFLHSGTAKSVTCTYSPALNKMFCQLAKTCPVQLWVDSTPPPGTRVRAMAIYKQSQHMTEVVRRCPHHERCSDSDGLAPPQHLIRVEGNLRVEYLDDRNTFRHSVVVPYEPPEVGSDCTTIHYNYMCNSSCMGGMNRRPILTIITLEDSSGNLLGRNSFEVRVCACPGRDRRTEEENLRKKGEPHHELPPGSTKRALPNNTSSSPQPKKKPLDGEYFTLQIRGRERFEMFRELNEALELKDAQAGKEPGGSRAHSSHLKSKKGQSTSRHKKLMFKTEGPDSD"
+    },
+    {
+      id: "CYP3A4",
+      name: "Cytochrome P450 3A4 (P08684)",
+      desc: "Major endoplasmic reticulum monooxygenase metabolizing approximately 50% of therapeutic drugs.",
+      sequence: "MALIPDLAMETWLLLAVSLVLLYLYGTHSHGLFKKLGIPGPTPLPFLGNILSYHKGFCMFDMECHKKYGKVWGFYDGQQPVLAITDPDMIKTVLVKECYSVFTNRRPFGPVGFMKSAISIAEDEEWKRLRSLLSPTFTSGKLKEMVPIIAQYGDVLVRNLRREAETGKPVTLKDVFGAYSMDVITSTSFGVNIDSLNNPQDPFVENTKKLLRFDFLDPFFLSITVFPFLIPILEVLNICVFPREVTNFLRKSVKRMKESRLEDTQKHRVDFLQLMIDSQNSKETESHKALSDLELMAQSIIFIFAGYETTSSVLSFIMYELATHPDVQQKLQEEIDAVLPNKAPPTYDTVLQMEYLDMVVNETLRLFPIAMRLERVCKKDVEINGMFIPKGVVVMIPSYALHRDPKYWTEPEKFLPERFSKKNKDNIDPYIYTPFGSGPRNCIGMRFALMNMKLALIRVLQNFSFKPCKETQIPLKLSLGGLLQPEKPVVLKVESRDGTVSGA"
+    },
+    {
+      id: "RHODOPSIN",
+      name: "Rhodopsin (P02699)",
+      desc: "7-transmembrane G-protein coupled photoreceptor converting photons into visual neurochemical signals.",
+      sequence: "MNGTEGPNFYVPFSNKTGVVRSPFEAPQYYLAEPWQFSMLAAYMFLLIMLGFPINFLTLYVTVQHKKLRTPLNYILLNLAVADLFMVFGGFTTTLYTSLHGYFVFGPTGCNLEGFFATLGGEIALWSLVVLAIERYVVVCKPMSNFRFGENHAIMGVAFTWVMALACAAPPLVGWSRYIPEGMQCSCGIDYYTPHEETNNESFVIYMFVVHFIIPLIVIFFCYGQLVFTVKEAAAQQQESATTQKAEKEVTRMVIIMVIAFLICWLPYAGVAFYIFTHQGSDFGPIFMTIPAFFAKTSAVYNPVIYIMMNKQFRNCMVTTLCCGKNPLGDDEASTTVSKTETSQVAPA"
+    }
+  ];
+
+  function renderPresetPills(samples) {
+    presetButtons.innerHTML = "";
+    samples.forEach(sample => {
+      const btn = document.createElement("button");
+      btn.className = "preset-pill";
+      btn.textContent = `⚡ ${sample.name.split(" ")[0]} (${sample.id})`;
+      btn.title = sample.desc;
+      btn.addEventListener("click", () => {
+        sequenceInput.value = `>${sample.id} | ${sample.name}\n${sample.sequence}`;
+        validateInput();
+        triggerPrediction();
+      });
+      presetButtons.appendChild(btn);
+    });
+  }
+
   async function loadPresetSamples() {
     try {
       const res = await fetch("/api/samples");
       if (res.ok) {
         presetSamples = await res.json();
-        presetButtons.innerHTML = "";
-        presetSamples.forEach(sample => {
-          const btn = document.createElement("button");
-          btn.className = "preset-pill";
-          btn.textContent = `⚡ ${sample.name.split(" ")[0]} (${sample.id})`;
-          btn.title = sample.desc;
-          btn.addEventListener("click", () => {
-            sequenceInput.value = `>${sample.id} | ${sample.name}\n${sample.sequence}`;
-            validateInput();
-            triggerPrediction();
-          });
-          presetButtons.appendChild(btn);
-        });
+        renderPresetPills(presetSamples);
+        return;
       }
     } catch (err) {
-      console.warn("Could not load /api/samples, using local fallback.", err);
+      console.warn("Could not reach /api/samples backend, using embedded fallback presets.", err);
     }
+    presetSamples = FALLBACK_PRESETS;
+    renderPresetPills(presetSamples);
   }
   loadPresetSamples();
 
