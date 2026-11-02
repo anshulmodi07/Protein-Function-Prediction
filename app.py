@@ -355,6 +355,13 @@ def serve_index():
         return FileResponse(index_path)
     return JSONResponse({"status": "DeepProtein API Running", "ui": "Place index.html in static/"})
 
+@app.get("/{filename}")
+def serve_static_root(filename: str):
+    file_path = os.path.join(static_dir, filename)
+    if os.path.exists(file_path) and os.path.isfile(file_path):
+        return FileResponse(file_path)
+    return JSONResponse({"error": "Not found"}, status_code=404)
+
 if __name__ == "__main__":
     import uvicorn
     print("Launching DeepProtein Studio Web Application on http://localhost:8000 ...")
